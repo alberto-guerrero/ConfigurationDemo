@@ -1,0 +1,43 @@
+version: '3.4'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: 'rabbitmq'
+      RABBITMQ_DEFAULT_PASS: 'rabbitmq'
+      RABBITMQ_DEFAULT_VHOST: '/'
+    ports:
+      - 15672:15672
+      - 5672:5672
+    volumes:
+      - ./rabbitmq/:/var/lib/rabbitmq/
+
+  db:
+    image: mongo
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+
+  ms.configurationservice.api:
+    image: ${DOCKER_REGISTRY-}msconfigurationservice
+    build:
+      context: .
+      dockerfile: MS.ConfigurationService.Api/Dockerfile
+    depends_on:
+      - db
+    environment:
+      - MongoDB__ConnectionString=mongodb://db:27017
+      - MongoDB__DatabaseName=UserSettingsDB
+
+  ms.configurationservice:
+    image: ${DOCKER_REGISTRY-}msconfigurationservice
+    build:
+      context: .
+      dockerfile: MS.ConfigurationService/Dockerfile
+
+volumes:
+  mongodb_data:
